@@ -32,6 +32,9 @@ StreakHundreds       .rs 1 ; Hundreds place of streak
 HighScoreOnes        .rs 1 ; High score ones place
 HighScoreTens        .rs 1 ; High score tens place
 HighScoreHundreds    .rs 1 ; High score hundreds place
+GameState            .rs 1 ; State of the game
+TitleSelectSpot      .rs 1 ; Keeps place of selector on title screen
+
 
 ;; Constants
 ;; Structure as follows:
@@ -49,7 +52,11 @@ TEN = $09
 JACK = $0A
 QUEEN = $0B
 KING = $0C
-
+TITLESCREEN = $00
+GAMESCREEN = $01
+INSTRUCTIONSSCREEN = $02
+START = $00
+INSTRUCTIONS = $01
 
 
 ;;;;;;;;;;;;;;;;;;;
@@ -109,39 +116,8 @@ LoadPalettesLoop:
   CPX #$20
   BNE LoadPalettesLoop
 
-;; Loads the background, using the data from the Secondary Code section
-;; Because the x register is only 1 byte, use 4 loops
-LoadBackground:
-  LDA $2002             ; read PPU status
-  LDA #$20
-  STA $2006
-  LDA #$00
-  STA $2006
-  LDX #$00              ; start X out at 0
-LoadBackgroundLoop1:
-  LDA background1, x    ; load data from address (background + the value in x)
-  STA $2007             ; write to PPU
-  INX
-  CPX #$00              ; Compare to pixel#/#_of_rows * 32.
-  BNE LoadBackgroundLoop1
-LoadBackgroundLoop2:
-  LDA background2, x    ; X already starts at 0 b/c of the overflow in last loop
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadBackgroundLoop2
-LoadBackgroundLoop3:
-  LDA background3, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadBackgroundLoop3
-LoadBackgroundLoop4:
-  LDA background4, x
-  STA $2007
-  INX
-  CPX #$C0
-  BNE LoadBackgroundLoop4
+  JSR DrawTitleScreen
+  JSR TitleScreenSelectorStart
 
 ;; Loads the Attribute Table, using the data from the Secondary Code section
 LoadAttribute:
@@ -160,7 +136,7 @@ LoadAttributeLoop1:
 
 ;; The initial startup
 InitialStartup:
-  JSR InitialState
+  JSR StartupState
 
 ;; Next enable the sprites and background
   LDA #%10010000   ; enable NMI, sprites from Pattern Table 0, background from Pattern Table 1
@@ -187,10 +163,17 @@ NMI:
   LDA #$02
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
+  LDA GameState
+  CMP #GAMESCREEN
+  BEQ DrawGamescreen
+  JMP PPUCleanup
+
+DrawGamescreen
   ;; Edit Background, such as streaks/highscore, here
   JSR DrawStreak
   JSR DrawHighScore
 
+PPUCleanup:
   ;; This is the PPU clean up section, so rendering the next frame starts properly.
   LDA #%10010000   ; enable NMI, sprites from Pattern Table 0, background from Pattern Table 1
   STA $2000
@@ -200,7 +183,52 @@ NMI:
   STA $2005
   STA $2005
 
-StartGameState:
+StartPlayState:
+
+  LDA GameState
+  CMP #TITLESCREEN
+  BEQ PlayTitleState
+  CMP #GAMESCREEN
+  BEQ PlayGameState
+  CMP #INSTRUCTIONSSCREEN
+  BEQ InstructionsScreenState
+  JMP EndGameState
+
+InstructionsScreenState:
+  JSR ReadController1
+  LDA PlayerOneController
+  ORA #%00000000
+  BEQ ControllerNotPressed
+  LDA ControllerHandler
+  CMP #$01
+  BEQ EndGameState
+CheckSelectPressedInstructions:
+  LDA PlayerOneController
+  AND #%00100000
+  BEQ EndGameState
+  JSR ReturnToTitle
+
+PlayTitleState:
+  JSR ReadController1
+  LDA PlayerOneController
+  ORA #%00000000
+  BEQ ControllerNotPressed
+  LDA ControllerHandler
+  CMP #$01
+  BEQ EndGameState
+CheckStartPressed:
+  LDA PlayerOneController
+  AND #%00010000 ; Start
+  BEQ CheckSelectPressed
+  JSR HandleTitleStart
+CheckSelectPressed:
+  LDA PlayerOneController
+  AND #%00100000 ; Select
+  BEQ EndGameState
+  JSR TitleSelect
+
+
+PlayGameState:
   ;; Have a counter which counts frames. The psuedo-"random" number generator
   INC Counter
 

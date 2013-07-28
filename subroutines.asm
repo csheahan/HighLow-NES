@@ -1,6 +1,13 @@
 
 ;; Subroutines
 
+StartupState:
+  LDA #$00
+  STA ControllerHandler ; Start with a controller up
+  LDA #TITLESCREEN
+  STA GameState
+  RTS
+
 ;; Set up the initial state of the game
 ;; Ace out, streak and high score = 0
 InitialState:
@@ -14,7 +21,6 @@ InitialState:
   STA HighScoreOnes
   STA HighScoreTens
   STA HighScoreHundreds
-  STA ControllerHandler ; Start with a controller up
   RTS
 
 ;; Reads in player 1's controller input, puts it into
@@ -336,6 +342,218 @@ DrawHighScore:
   STA $2007
   LDA HighScoreOnes
   STA $2007
+  RTS
+
+;; Loads the background, using the data from the Secondary Code section
+;; Because the x register is only 1 byte, use 4 loops
+DrawGameBackground:
+LoadBackground:
+  LDA $2002             ; read PPU status
+  LDA #$20
+  STA $2006
+  LDA #$00
+  STA $2006
+  LDX #$00              ; start X out at 0
+LoadBackgroundLoop1:
+  LDA background1, x    ; load data from address (background + the value in x)
+  STA $2007             ; write to PPU
+  INX
+  CPX #$00              ; Compare to pixel#/#_of_rows * 32.
+  BNE LoadBackgroundLoop1
+LoadBackgroundLoop2:
+  LDA background2, x    ; X already starts at 0 b/c of the overflow in last loop
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadBackgroundLoop2
+LoadBackgroundLoop3:
+  LDA background3, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadBackgroundLoop3
+LoadBackgroundLoop4:
+  LDA background4, x
+  STA $2007
+  INX
+  CPX #$C0
+  BNE LoadBackgroundLoop4
+  RTS
+
+DrawTitleScreen:
+LoadTitleBackground:
+  LDA $2002
+  LDA #$20
+  STA $2006
+  LDA #$00
+  STA $2006
+  LDX #$00
+LoadTitleBackgroundLoop1:
+  LDA titleBackground1, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadTitleBackgroundLoop1
+LoadTitleBackgroundLoop2:
+  LDA titleBackground2, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadTitleBackgroundLoop2
+LoadTitleBackgroundLoop3:
+  LDA titleBackground3, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadTitleBackgroundLoop3
+LoadTitleBackgroundLoop4:
+  LDA titleBackground4, x
+  STA $2007
+  INX
+  CPX #$C0
+  BNE LoadTitleBackgroundLoop4
+  RTS
+
+DrawInstructionsScreen:
+LoadInstructionsBackground:
+  LDA $2002
+  LDA #$20
+  STA $2006
+  LDA #$00
+  STA $2006
+  LDX #$00
+LoadInstructionsBackgroundLoop1:
+  LDA instructionsBackground1, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadInstructionsBackgroundLoop1
+LoadInstructionsBackgroundLoop2:
+  LDA instructionsBackground2, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadInstructionsBackgroundLoop2
+LoadInstructionsBackgroundLoop3:
+  LDA instructionsBackground3, x
+  STA $2007
+  INX
+  CPX #$00
+  BNE LoadInstructionsBackgroundLoop3
+LoadInstructionsBackgroundLoop4:
+  LDA instructionsBackground4, x
+  STA $2007
+  INX
+  CPX #$C0
+  BNE LoadInstructionsBackgroundLoop4
+  RTS
+
+TitleScreenSelectorStart:
+  LDA #$B0
+  STA $0234
+  LDA #$4E
+  STA $0235
+  LDA $00
+  STA $0236
+  LDA #$58
+  STA $0237
+  RTS
+
+TitleScreenSelectorInstructions:
+  LDA #$C0
+  STA $0234
+  LDA #$4E
+  STA $0235
+  LDA $00
+  STA $0236
+  LDA #$58
+  STA $0237
+  RTS
+
+SelectorOff:
+  LDA #$F0
+  STA $0234
+  LDA $4E
+  STA $0235
+  LDA #$00
+  STA $0236
+  STA $0237
+  RTS
+
+ReturnToTitle:
+  LDA #$00
+  STA $2000
+  STA $2001
+  JSR DrawTitleScreen
+  LDA #%10010000
+  STA $2000
+  LDA #%00011110
+  STA $2001
+  JSR TitleScreenSelectorStart
+  JSR StartupState
+  RTS
+
+HandleTitleStart:
+  LDA TitleSelectSpot
+  CMP #START
+  BEQ RunStartGame
+  CMP #INSTRUCTIONS
+  BEQ RunInstructionsScreen
+  RTS
+
+RunStartGame:
+  JSR StartGame
+  RTS
+
+RunInstructionsScreen:
+  JSR InstructionsScreen
+  RTS
+
+InstructionsScreen:
+  LDA #$00
+  STA $2000
+  STA $2001
+  LDA #INSTRUCTIONSSCREEN
+  STA GameState
+  JSR DrawInstructionsScreen
+  LDA #%10010000
+  STA $2000
+  LDA #%00011110
+  STA $2001
+  JSR SelectorOff
+  RTS
+
+StartGame:
+  LDA #$00 ; Turn off screen before redrawing it
+  STA $2000
+  STA $2001
+  LDA #GAMESCREEN
+  STA GameState
+  JSR InitialState
+  JSR DrawGameBackground
+  LDA #%10010000
+  STA $2000
+  LDA #%00011110
+  STA $2001
+  JSR SelectorOff
+  RTS
+
+TitleSelect:
+  LDA TitleSelectSpot
+  CMP #START
+  BNE MoveToStart
+MoveToSelect:
+  LDA #INSTRUCTIONS
+  STA TitleSelectSpot
+  JSR TitleScreenSelectorInstructions
+  JMP DoneWithTitleSelect
+MoveToStart:
+  LDA #START
+  STA TitleSelectSpot
+  JSR TitleScreenSelectorStart
+DoneWithTitleSelect:
+  LDA #$01
+  STA ControllerHandler
   RTS
 
 ;; For debugging. A visual cue of something running

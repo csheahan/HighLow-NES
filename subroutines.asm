@@ -344,40 +344,30 @@ DrawHighScore:
   STA $2007
   RTS
 
-;; Loads the background, using the data from the Secondary Code section
-;; Because the x register is only 1 byte, use 4 loops
 DrawGameBackground:
-LoadBackground:
-  LDA $2002             ; read PPU status
+LoadGameBackground:
+  LDA $2002
   LDA #$20
   STA $2006
   LDA #$00
   STA $2006
-  LDX #$00              ; start X out at 0
-LoadBackgroundLoop1:
-  LDA background1, x    ; load data from address (background + the value in x)
-  STA $2007             ; write to PPU
-  INX
-  CPX #$00              ; Compare to pixel#/#_of_rows * 32.
-  BNE LoadBackgroundLoop1
-LoadBackgroundLoop2:
-  LDA background2, x    ; X already starts at 0 b/c of the overflow in last loop
+  LDA #LOW(gameBackground)
+  STA PointerLow
+  LDA #HIGH(gameBackground)
+  STA PointerHigh
+  LDX #$00
+  LDY #$00
+OutsideGameBackgroundLoop:
+InsideGameBackgroundLoop:
+  LDA [PointerLow], y
   STA $2007
+  INY
+  CPY #$00
+  BNE InsideGameBackgroundLoop
+  INC PointerHigh
   INX
-  CPX #$00
-  BNE LoadBackgroundLoop2
-LoadBackgroundLoop3:
-  LDA background3, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadBackgroundLoop3
-LoadBackgroundLoop4:
-  LDA background4, x
-  STA $2007
-  INX
-  CPX #$C0
-  BNE LoadBackgroundLoop4
+  CPX #$04
+  BNE OutsideGameBackgroundLoop
   RTS
 
 DrawTitleScreen:
@@ -387,31 +377,23 @@ LoadTitleBackground:
   STA $2006
   LDA #$00
   STA $2006
+  LDA #LOW(titleBackground)
+  STA PointerLow
+  LDA #HIGH(titleBackground)
+  STA PointerHigh
   LDX #$00
-LoadTitleBackgroundLoop1:
-  LDA titleBackground1, x
+  LDY #$00
+OutsideTitleBackgroundLoop:
+InsideTitleBackgroundLoop:
+  LDA [PointerLow], y
   STA $2007
+  INY
+  CPY #$00
+  BNE InsideTitleBackgroundLoop
+  INC PointerHigh
   INX
-  CPX #$00
-  BNE LoadTitleBackgroundLoop1
-LoadTitleBackgroundLoop2:
-  LDA titleBackground2, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadTitleBackgroundLoop2
-LoadTitleBackgroundLoop3:
-  LDA titleBackground3, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadTitleBackgroundLoop3
-LoadTitleBackgroundLoop4:
-  LDA titleBackground4, x
-  STA $2007
-  INX
-  CPX #$C0
-  BNE LoadTitleBackgroundLoop4
+  CPX #$04
+  BNE OutsideTitleBackgroundLoop
   RTS
 
 DrawInstructionsScreen:
@@ -421,31 +403,23 @@ LoadInstructionsBackground:
   STA $2006
   LDA #$00
   STA $2006
+  LDA #LOW(instructionsBackground)
+  STA PointerLow
+  LDA #HIGH(instructionsBackground)
+  STA PointerHigh
   LDX #$00
-LoadInstructionsBackgroundLoop1:
-  LDA instructionsBackground1, x
+  LDY #$00
+OutsideInstructionsBackgroundLoop:
+InsideInstructionsBackgroundLoop:
+  LDA [PointerLow], y
   STA $2007
+  INY
+  CPY #$00
+  BNE InsideInstructionsBackgroundLoop
+  INC PointerHigh
   INX
-  CPX #$00
-  BNE LoadInstructionsBackgroundLoop1
-LoadInstructionsBackgroundLoop2:
-  LDA instructionsBackground2, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadInstructionsBackgroundLoop2
-LoadInstructionsBackgroundLoop3:
-  LDA instructionsBackground3, x
-  STA $2007
-  INX
-  CPX #$00
-  BNE LoadInstructionsBackgroundLoop3
-LoadInstructionsBackgroundLoop4:
-  LDA instructionsBackground4, x
-  STA $2007
-  INX
-  CPX #$C0
-  BNE LoadInstructionsBackgroundLoop4
+  CPX #$04
+  BNE OutsideInstructionsBackgroundLoop
   RTS
 
 TitleScreenSelectorStart:

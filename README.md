@@ -1,6 +1,6 @@
 HighLow NES Homebrew Game
 ===========================
-Version 1.0
+Version 1.1
 
 Useful Resources
 -------------------------------
@@ -75,12 +75,13 @@ None currently, other than improve code
 Things to Fix
 ---------------------
 * Didn't realize this when drawing the sprites, but the first color in their palette is the alpha color, so the cards should actually have a black border and the numbers should be in a black color. I got around this by putting a black background where the numbers are on the cards.
-* Improve code. For example, there probably is a way to load the background in one loop instead of 4, I might just have to use all 3 registers instead of just 2. Another good way to go about this is to study how other homebrew NES games have been made and see how they did things.
 * Currently, the LoadPalettes function doesn't quite work. Luckily, I'm not making the most colorful game, but could be a problem if I wanted to use more than 4 colors or different colors for sprites and the background.
 * Currently, my psuedo-random number generator isn't that good. What I'm doing currently is counting the frames with an eight bit number, and when asked for a random card, I take the logical AND of the frame count with $0F (0F in hex). This will result in a 4 bit number, as the highest bits are now 0. So now that there are 4 bits, this gives me 16 possibilities (0-15). This is a descent way to create randomness, as only tools can legitly beat this system. Unfortunately, there are only 13 cards, so 3 cases are not handled, and as of right now those three cases are hardcoded to working cases.
 
 Verison History
 ------------------
+* 1.1 - Updated code. Updates include:
+  1. Changed background loading to use 16 bit math (with 2 8 bit pointers) in order to reduce code and complexity 
 * 1.0 - Current Version. Full game (Title screen, info screen, game). Works 100% as far as I know.
   Fixes include:
   1. Added a Title Screen

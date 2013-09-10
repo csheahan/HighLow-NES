@@ -34,6 +34,8 @@ HighScoreTens        .rs 1 ; High score tens place
 HighScoreHundreds    .rs 1 ; High score hundreds place
 GameState            .rs 1 ; State of the game
 TitleSelectSpot      .rs 1 ; Keeps place of selector on title screen
+PointerLow           .rs 1 ; Used for 16 bit math
+PointerHigh          .rs 1 ; Used for 16 bit math
 
 
 ;; Constants
